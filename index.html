@@ -1,0 +1,2619 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>One Step at a Time</title>
+  <!-- The script sets the real tab title from the project data at load,
+       so this file stays identical across every walkthrough app.
+       All styling lives in the one style block below. Comment rule that
+       bit us once: inside the style block use slash-star comments only;
+       an HTML-style comment in there silently eats the next rule. -->
+  <style>
+    :root {
+      --wash: #E9EDF1;
+      /* workbench surface */
+      --card: #FFFFFF;
+      /* index card */
+      --ink: #1C2B33;
+      /* text */
+      --ink-soft: #5A6B76;
+      /* secondary text */
+      --line: #D3DCE3;
+      /* hairlines */
+      --act: #2A5B8C;
+      /* interactive blue */
+      --act-soft: #E4EDF5;
+      --go: #1B7F4B;
+      /* completion green, used for nothing else */
+      --go-soft: #EEF6EF;
+      --amber: #C77A1F;
+      /* current-step LED and reset accents only */
+      --mono: ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
+      --serif: Charter, Georgia, 'Times New Roman', serif;
+      --sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%
+    }
+
+    body {
+      background: var(--wash);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.55;
+      min-height: 100vh
+    }
+
+    button {
+      font: inherit;
+      color: inherit;
+      background: none;
+      border: none;
+      cursor: pointer
+    }
+
+    button:focus-visible,
+    a:focus-visible,
+    summary:focus-visible {
+      outline: 2px solid var(--act);
+      outline-offset: 2px;
+      border-radius: 4px
+    }
+
+    .shell {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 0 16px 64px
+    }
+
+    /* ---------- header ---------- */
+    header {
+      position: sticky;
+      top: 0;
+      background: var(--wash);
+      z-index: 5;
+      padding: 14px 0 10px;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .hrow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px
+    }
+
+    .brand {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--ink-soft)
+    }
+
+    .brand b {
+      color: var(--ink);
+      font-weight: 600
+    }
+
+    .hbtns {
+      display: flex;
+      align-items: center;
+      gap: 6px
+    }
+
+    .hbtn {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .06em;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--card);
+      color: var(--act)
+    }
+
+    .hbtn:hover {
+      border-color: var(--act)
+    }
+
+    .dots {
+      display: flex;
+      gap: 7px;
+      margin-top: 10px
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: var(--card);
+      border: 1.5px solid var(--line);
+      transition: background .25s, border-color .25s
+    }
+
+    .dot.on {
+      background: var(--go);
+      border-color: var(--go)
+    }
+
+    .dot.cur {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 3px rgba(199, 122, 31, .18)
+    }
+
+    .progress-note {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-soft);
+      margin-top: 6px
+    }
+
+    /* ---------- chooser ---------- */
+    .choose {
+      padding: 56px 0 20px;
+      text-align: center
+    }
+
+    .choose .eyebrow {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-soft)
+    }
+
+    .choose h1 {
+      font-family: var(--serif);
+      font-size: clamp(34px, 7vw, 46px);
+      line-height: 1.08;
+      margin: 10px 0 6px
+    }
+
+    .choose .proj {
+      font-size: 17px;
+      color: var(--ink-soft);
+      margin-bottom: 14px
+    }
+
+    .tut {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--ink);
+      background: var(--card);
+      border: 1px solid var(--line);
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 999px;
+      margin-bottom: 28px
+    }
+
+    .modes {
+      display: grid;
+      gap: 12px;
+      text-align: left
+    }
+
+    @media(min-width:560px) {
+      .modes {
+        grid-template-columns: 1fr 1fr
+      }
+    }
+
+    .mode {
+      background: var(--card);
+      border: 1.5px solid var(--line);
+      border-radius: 12px;
+      padding: 18px 16px;
+      transition: border-color .15s, transform .15s;
+      width: 100%;
+      text-align: left
+    }
+
+    .mode:hover {
+      border-color: var(--act);
+      transform: translateY(-1px)
+    }
+
+    .mode .mt {
+      font-family: var(--serif);
+      font-size: 21px;
+      margin-bottom: 4px
+    }
+
+    .mode .ms {
+      font-size: 14px;
+      color: var(--ink-soft)
+    }
+
+    details.demo {
+      margin-top: 26px;
+      text-align: left;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px
+    }
+
+    details.demo summary {
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--act);
+      padding: 12px 16px;
+      list-style: none
+    }
+
+    details.demo summary::-webkit-details-marker {
+      display: none
+    }
+
+    details.demo[open] summary {
+      border-bottom: 1px solid var(--line)
+    }
+
+    details.demo .demo-body {
+      padding: 14px 16px;
+      font-size: 14.5px;
+      color: var(--ink-soft)
+    }
+
+    details.demo .demo-body p {
+      margin-bottom: 8px
+    }
+
+    /* Replace the text block inside .demo-body with a short demo GIF when it is ready */
+    .foot {
+      margin-top: 34px;
+      font-size: 13px;
+      color: var(--ink-soft)
+    }
+
+    /* ---------- step card ---------- */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 26px 22px 20px;
+      margin-top: 22px;
+      box-shadow: 0 1px 2px rgba(28, 43, 51, .05);
+      animation: cardin .18s ease-out
+    }
+
+    @keyframes cardin {
+      from {
+        opacity: 0;
+        transform: translateY(6px)
+      }
+
+      to {
+        opacity: 1;
+        transform: none
+      }
+    }
+
+    @media(prefers-reduced-motion:reduce) {
+      * {
+        animation: none !important;
+        transition: none !important
+      }
+    }
+
+    .step-eyebrow {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      display: flex;
+      justify-content: space-between;
+      align-items: center
+    }
+
+    .step-eyebrow .done-flag {
+      color: var(--go);
+      font-weight: 600
+    }
+
+    .card h2 {
+      font-family: var(--serif);
+      font-size: clamp(24px, 5vw, 30px);
+      line-height: 1.15;
+      margin: 8px 0 8px
+    }
+
+    .intro {
+      color: var(--ink-soft);
+      font-size: 15.5px;
+      margin-bottom: 16px
+    }
+
+    .prereq {
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--act);
+      background: #F7FAFC;
+      border-radius: 8px;
+      padding: 11px 14px 12px;
+      margin: 0 0 16px
+    }
+
+    .prereq h4 {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--act);
+      margin-bottom: 6px
+    }
+
+    .prereq ul {
+      list-style: none
+    }
+
+    .prereq li {
+      font-size: 14px;
+      padding: 3px 0;
+      display: flex;
+      gap: 9px;
+      align-items: flex-start
+    }
+
+    .prereq li::before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--act);
+      margin-top: 8px;
+      flex: 0 0 auto
+    }
+
+    .ctrl {
+      margin: 0 0 16px
+    }
+
+    .ctrl-label {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin-bottom: 7px
+    }
+
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px
+    }
+
+    .pill {
+      font-size: 14px;
+      padding: 7px 14px;
+      border: 1.5px solid var(--line);
+      border-radius: 999px;
+      background: var(--card)
+    }
+
+    .pill.on {
+      border-color: var(--act);
+      background: var(--act-soft);
+      color: var(--act);
+      font-weight: 600
+    }
+
+    .seg {
+      display: inline-flex;
+      border: 1.5px solid var(--line);
+      border-radius: 9px;
+      overflow: hidden
+    }
+
+    .seg button {
+      font-size: 13.5px;
+      padding: 7px 13px;
+      border-right: 1.5px solid var(--line)
+    }
+
+    .seg button:last-child {
+      border-right: none
+    }
+
+    .seg button.on {
+      background: var(--act);
+      color: #fff;
+      font-weight: 600
+    }
+
+    ul.actions {
+      list-style: none;
+      margin: 4px 0 6px
+    }
+
+    .act-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 11px 4px;
+      border-bottom: 1px dashed var(--line)
+    }
+
+    .act-row:last-child {
+      border-bottom: none
+    }
+
+    label.act-row {
+      cursor: pointer
+    }
+
+    .anum {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      color: var(--ink-soft);
+      min-width: 20px;
+      text-align: right;
+      margin-top: 3px;
+      flex: 0 0 auto
+    }
+
+    .box {
+      flex: 0 0 auto;
+      width: 21px;
+      height: 21px;
+      margin-top: 2px;
+      border: 2px solid var(--act);
+      border-radius: 5px;
+      display: grid;
+      place-items: center;
+      background: var(--card);
+      transition: background .12s, transform .12s
+    }
+
+    .act-row input {
+      position: absolute;
+      opacity: 0;
+      width: 1px;
+      height: 1px
+    }
+
+    .act-row input:checked+.box {
+      background: var(--go);
+      border-color: var(--go);
+      transform: scale(1.05)
+    }
+
+    .act-row input:checked+.box::after {
+      content: '';
+      width: 6px;
+      height: 11px;
+      border: solid #fff;
+      border-width: 0 2.5px 2.5px 0;
+      transform: rotate(43deg);
+      margin-top: -2px
+    }
+
+    .act-row input:focus-visible+.box {
+      outline: 2px solid var(--act);
+      outline-offset: 2px
+    }
+
+    .act-row input:checked~.atext {
+      color: var(--ink-soft)
+    }
+
+    .atext {
+      font-size: 15.5px
+    }
+
+    /* Code blocks inside an action: a small terminal slab on the
+       card. Follow-along steps put typeable code here. */
+    .acode {
+      display: block;
+      margin: 10px 0 4px;
+      padding: 12px 14px;
+      background: var(--ink);
+      color: #E8EEF2;
+      border-radius: 8px;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      line-height: 1.55;
+      white-space: pre;
+      overflow-x: auto;
+      text-decoration: none;
+      cursor: text;
+    }
+
+    .act-row input:checked~.atext .acode {
+      opacity: .75
+    }
+
+    .extras {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 16px 0 6px
+    }
+
+    .xbtn {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .04em;
+      padding: 7px 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      color: var(--act);
+      background: var(--card)
+    }
+
+    .xbtn:hover {
+      border-color: var(--act)
+    }
+
+    .xbtn.open {
+      background: var(--act);
+      color: #fff;
+      border-color: var(--act)
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px;
+      margin: 6px 0 10px;
+      background: #FBFCFD
+    }
+
+    .panel h4 {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin-bottom: 10px
+    }
+
+    .tbl+.tbl {
+      margin-top: 16px
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 13.5px
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 7px 8px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top
+    }
+
+    th {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--ink-soft)
+    }
+
+    td.mono {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      white-space: nowrap
+    }
+
+    .tablewrap {
+      overflow-x: auto
+    }
+
+    .issue {
+      padding: 11px 0;
+      border-bottom: 1px dashed var(--line)
+    }
+
+    .issue:last-child {
+      border-bottom: none
+    }
+
+    .issue .tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 5px
+    }
+
+    .tag {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: .06em;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      color: var(--ink-soft)
+    }
+
+    .tag.global {
+      border-color: var(--go);
+      color: var(--go);
+      background: var(--go-soft);
+      font-weight: 600
+    }
+
+    .issue .prob {
+      font-weight: 600;
+      font-size: 14.5px;
+      margin-bottom: 3px
+    }
+
+    .issue .fix {
+      font-size: 14.5px;
+      color: var(--ink-soft)
+    }
+
+    .checkpoint {
+      margin: 18px 0 4px;
+      background: var(--go-soft);
+      border: 1.5px solid var(--go);
+      border-radius: 10px;
+      padding: 13px 15px;
+      position: relative;
+      clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%)
+    }
+
+    .checkpoint .cp-eyebrow {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--go);
+      font-weight: 700;
+      margin-bottom: 4px
+    }
+
+    .checkpoint .cp-text {
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--ink)
+    }
+
+    .checkpoint.met {
+      background: var(--go);
+      border-color: var(--go)
+    }
+
+    .checkpoint.met .cp-eyebrow,
+    .checkpoint.met .cp-text {
+      color: #fff
+    }
+
+    /* Back on the left, Reset in the middle, Next on the right */
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line)
+    }
+
+    .ghost {
+      font-size: 14px;
+      color: var(--act)
+    }
+
+    .ghost:hover {
+      text-decoration: underline
+    }
+
+    .ghost:disabled {
+      color: var(--line);
+      cursor: default;
+      text-decoration: none
+    }
+
+    .resetbtn {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--ink-soft);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 7px 14px;
+      background: var(--card)
+    }
+
+    .resetbtn:hover {
+      border-color: var(--amber);
+      color: var(--amber)
+    }
+
+    .next {
+      background: var(--act);
+      color: #fff;
+      font-weight: 600;
+      font-size: 15px;
+      padding: 11px 24px;
+      border-radius: 9px;
+      transition: background .15s, transform .1s
+    }
+
+    .next:hover:not(:disabled) {
+      transform: translateY(-1px)
+    }
+
+    .next:disabled {
+      background: var(--line);
+      color: #8FA0AB;
+      cursor: not-allowed
+    }
+
+    .next.finish {
+      background: var(--go)
+    }
+
+    .gate-note {
+      font-size: 12.5px;
+      color: var(--ink-soft);
+      text-align: right;
+      margin-top: 7px
+    }
+
+    /* ---------- big picture ---------- */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(28, 43, 51, .45);
+      display: none;
+      z-index: 20;
+      overflow-y: auto;
+      padding: 24px 16px
+    }
+
+    .overlay.show {
+      display: block
+    }
+
+    .sheet {
+      max-width: 560px;
+      margin: 0 auto;
+      background: var(--card);
+      border-radius: 14px;
+      padding: 24px 20px
+    }
+
+    .sheet h3 {
+      font-family: var(--serif);
+      font-size: 26px;
+      margin-bottom: 2px
+    }
+
+    .sheet .sub {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--ink-soft);
+      margin-bottom: 16px
+    }
+
+    .bp-row {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      width: 100%;
+      text-align: left;
+      padding: 12px 6px;
+      border-bottom: 1px dashed var(--line)
+    }
+
+    .bp-row:hover:not(:disabled) {
+      background: var(--act-soft)
+    }
+
+    .bp-row:disabled {
+      opacity: .42;
+      cursor: not-allowed
+    }
+
+    .led {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+      border: 2px solid var(--line);
+      background: var(--card)
+    }
+
+    .led.on {
+      background: var(--go);
+      border-color: var(--go)
+    }
+
+    .led.cur {
+      border-color: var(--amber);
+      background: #FDF3E4
+    }
+
+    .bp-num {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--ink-soft);
+      min-width: 16px
+    }
+
+    .bp-title {
+      font-size: 15px;
+      flex: 1
+    }
+
+    .bp-state {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-soft)
+    }
+
+    .bp-state.done {
+      color: var(--go);
+      font-weight: 700
+    }
+
+    .sheet .close {
+      margin-top: 16px;
+      width: 100%;
+      border: 1.5px solid var(--line);
+      border-radius: 9px;
+      padding: 11px;
+      font-weight: 600;
+      color: var(--act)
+    }
+
+    /* ---------- congrats ---------- */
+    .congrats {
+      text-align: center;
+      padding: 60px 0 30px
+    }
+
+    .congrats .eyebrow {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--go);
+      font-weight: 700
+    }
+
+    .congrats h1 {
+      font-family: var(--serif);
+      font-size: clamp(30px, 6.5vw, 42px);
+      line-height: 1.22;
+      margin: 18px 0 10px
+    }
+
+    .congrats h1 span {
+      display: block
+    }
+
+    .congrats .count {
+      color: var(--go)
+    }
+
+    .congrats .after {
+      color: var(--ink-soft);
+      font-size: 16px;
+      margin: 14px 0 30px
+    }
+
+    .congrats .row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap
+    }
+
+    /* ---------- modal ---------- */
+    .modal-wrap {
+      position: fixed;
+      inset: 0;
+      background: rgba(28, 43, 51, .45);
+      display: none;
+      z-index: 30;
+      align-items: center;
+      justify-content: center;
+      padding: 20px
+    }
+
+    .modal-wrap.show {
+      display: flex
+    }
+
+    .modal {
+      background: var(--card);
+      border-radius: 14px;
+      max-width: 420px;
+      width: 100%;
+      padding: 24px 22px
+    }
+
+    .modal h3 {
+      font-family: var(--serif);
+      font-size: 22px;
+      margin-bottom: 8px
+    }
+
+    .modal p {
+      color: var(--ink-soft);
+      font-size: 15px;
+      margin-bottom: 20px
+    }
+
+    .modal .row {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end
+    }
+
+    .btn-quiet {
+      border: 1.5px solid var(--line);
+      border-radius: 9px;
+      padding: 10px 16px;
+      font-weight: 600;
+      color: var(--ink-soft)
+    }
+
+    .btn-warn {
+      background: var(--act);
+      color: #fff;
+      border-radius: 9px;
+      padding: 10px 18px;
+      font-weight: 600
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ==========================================================
+       FIXED SKELETON: the four shells the script fills.
+       1. #hdr    the sticky header bar (hidden until a mode is chosen)
+       2. #main   every screen (chooser, step card, congrats) renders here
+       3. #bp     the Big Picture overlay
+       4. #mwrap  the reusable confirm modal
+       Nothing else is ever added to the body; if content is on
+       screen, one of the render functions in the script put it
+       inside one of these four.
+       ========================================================== -->
+  <header id="hdr" hidden>
+    <div class="shell" style="padding-bottom:0">
+      <div class="hrow">
+        <div class="brand"><b>One Step at a Time</b> &middot; <span id="hproj"></span></div>
+        <div class="hbtns">
+          <button class="hbtn" id="modeSwitch"></button>
+          <button class="hbtn" id="bpBtn">The Big Picture</button>
+        </div>
+      </div>
+      <div class="dots" id="dots" aria-hidden="true"></div>
+      <div class="progress-note" id="pnote"></div>
+    </div>
+  </header>
+
+  <!-- The stage: renderChooser, renderStep, and renderEnd each empty
+       this element and rebuild it. See the CODE MAP in the script. -->
+  <main class="shell" id="main"></main>
+
+  <!-- The Big Picture overlay: openBP() fills #bpList with one row
+       per step and adds the 'show' class to display it. -->
+  <div class="overlay" id="bp" role="dialog" aria-label="The Big Picture">
+    <div class="sheet">
+      <h3>The Big Picture</h3>
+      <div class="sub" id="bpSub"></div>
+      <div id="bpList"></div>
+      <button class="close" id="bpClose">Back to the step</button>
+    </div>
+  </div>
+
+  <!-- The confirm modal: ask() in the script fills the title, body,
+       and both buttons, then shows it. Only Reset uses it today. -->
+  <div class="modal-wrap" id="mwrap" role="dialog" aria-modal="true">
+    <div class="modal">
+      <h3 id="mTitle"></h3>
+      <p id="mBody"></p>
+      <div class="row">
+        <button class="btn-quiet" id="mNo"></button>
+        <button class="btn-warn" id="mYes"></button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ============================================================
+       CODE MAP: how this file is organized and how it runs.
+
+       The file has three floors:
+         1. The style block: all looks. Nothing in it changes
+            behavior; it only decides how things appear.
+         2. The body skeleton: four fixed shells that start empty
+            or hidden (header bar, main area, Big Picture overlay,
+            confirm modal). The script fills them.
+         3. This script, top to bottom:
+              a. PROJECT   the data. The only part edited per app.
+              b. store     saves progress (localStorage + fallback)
+              c. state     everything the app remembers
+              d. helpers   small read-only functions that answer
+                           questions about the data and state
+              e. renderers functions that draw each screen
+              f. wire-up   the last lines: connect the header
+                           buttons and start the app
+
+       What happens first: the browser reads this script top to
+       bottom and only DEFINES things. Nothing is drawn until the
+       final two lines run: loadState() restores saved progress,
+       then render() draws the first screen.
+
+       The one loop that runs everything after that:
+
+         a click changes state  ->  saveState()  ->  render()
+
+       render() throws away whatever is inside the main area and
+       redraws it from state, so the screen is always a pure
+       picture of state. To change what appears, change the data
+       or a render function; hand-editing the page from the
+       browser console will vanish on the next redraw, and that
+       is by design.
+       ============================================================ */
+
+    /* ============================================================
+       PROJECT DATA
+       This block is the single source of truth. The companion
+       script tools/generate_docs.py reads everything between the
+       START and END markers below and generates the repo's
+       Markdown troubleshooting and lessons file from it.
+       Edit copy here; never in two places.
+
+       Header fields, in order:
+       - "id" keys saved progress in the browser, so two apps
+         never overwrite each other's ticks. Lowercase, hyphens.
+       - "title" and "tagline" fill the chooser and header bar.
+       - "hardwareLabels" are the two fork toggle button labels.
+       - "forkTags" are the short words issues use as tags for the
+         two fork sides. They must match issue tags exactly.
+       - "hardwareQuestion" is the short prompt above the toggle.
+       - "congratsAfter" is the line under the motto on the
+         all-green finish screen: point it at what comes next.
+
+       Shapes worth knowing:
+       - An action is a string, or an object with "text" plus
+         "older" / "newer" overrides picked by the hardware toggle.
+       - An action object may also carry "code": a string shown as
+         a typeable code block under the text. Fork the block by
+         making "code" an object with "older" / "newer" strings.
+       - "cheat" is one table or an array of tables. A table row is
+         an array of cells, or an object keyed "older" / "newer"
+         whose matching variant shows for the selected hardware.
+       - "prereqs" renders as the What You Need box under the intro.
+
+       One HTML quirk worth knowing: never leave a literal closing
+       script tag inside data text. The browser would end the app's
+       script right there, even inside a quoted string. Write the
+       slash escaped instead, as in <\/script>, which reads back
+       as the plain tag when the data is parsed.
+       ============================================================ */
+    const PROJECT = /*__STEPS_DATA_START__*/{
+      "id": "build-your-own-walkthrough",
+      "title": "Build Your Own Walkthrough App",
+      "tagline": "Learn to plan, hand-build, and publish an interactive walkthrough for any project you have finished. No experience needed.",
+      "hardwareLabels": {
+        "older": "Windows",
+        "newer": "Mac or Linux"
+      },
+      "forkTags": {
+        "older": "Windows",
+        "newer": "Mac or Linux"
+      },
+      "hardwareQuestion": "You edit on",
+      "congratsAfter": "You did not just publish a project. You built the machine that publishes projects. Open your notes file: the next walkthrough is waiting.",
+      "steps": [
+        {
+          "id": "plan",
+          "title": "Plan the journey on paper",
+          "intro": "A walkthrough is written from evidence, not memory, and planned before any code exists. Pick one truly finished project, mine everything you recorded, and draw the map. Put this app on one half of your screen and keep it there: from the next step on, you build alongside it.",
+          "prereqs": [
+            "A really finished project (the end state works, and you could do it again)",
+            "Your raw notes and history: chat logs, terminal history, browser history, photos of screens",
+            "Paper or a blank text file for the map"
+          ],
+          "actions": [
+            "Pick one project that is truly done. The test: it works today, and you could rebuild it without discovering anything new.",
+            "Write the finish line as one sentence: what exactly is true when the project is done. Checkable facts only, no adjectives.",
+            "Gather every scrap into one notes file: commands you ran, pages you searched, errors you saw, photos you took. Messy is fine, missing is not.",
+            "List every problem you hit, and next to each one, the fix that actually worked. This list becomes your app's best content.",
+            "Chunk the journey into 5 to 9 steps, each named in plain words that say what happens ('Make the bootable drive', not 'Preparation, part two').",
+            "Give every step exactly one done-when sentence: a fact someone can check, not a feeling. If a step's checkpoint needs the word 'then', split it into two steps."
+          ],
+          "cheat": [
+            {
+              "title": "Planning rules that held up",
+              "cols": [
+                "Rule",
+                "How to apply it",
+                "Why it matters"
+              ],
+              "rows": [
+                [
+                  "The finish line",
+                  "One sentence, checkable, no adjectives. 'The server dashboard loads and updates finish without errors' beats 'the server works great'.",
+                  "Every checkpoint in your app descends from this line. A vague finish line produces steps nobody can tick."
+                ],
+                {
+                  "older": [
+                    "Mining command history",
+                    "In PowerShell, run Get-History for this session, or open the file that (Get-PSReadlineOption).HistorySavePath points to for everything.",
+                    "Commands you actually ran are the most honest record of what the project really required."
+                  ],
+                  "newer": [
+                    "Mining command history",
+                    "In the terminal, run history. It lists the commands from your shell's saved record, ready to copy into your notes.",
+                    "Commands you actually ran are the most honest record of what the project really required."
+                  ]
+                },
+                [
+                  "5 to 9 steps",
+                  "Merge or split until the count lands in range. The Proxmox walkthrough landed on seven. (This course runs eleven because teaching code needs more runway; your project walkthrough should stay in range.)",
+                  "Progress dots and small complete wins are built for this range. A 20-step map produces the exact overwhelmed feeling this app exists to remove."
+                ],
+                [
+                  "One checkpoint per step",
+                  "End every step with a single 'You're done when' fact.",
+                  "The checkpoint is what flips a step green. Two facts means the user is never sure, and unsure users stop."
+                ],
+                [
+                  "The problem list",
+                  "One row per problem: what you saw, then the fix that worked, in first person and past tense.",
+                  "Fixed problems are the difference between a walkthrough and a rewritten manual. Nobody else can copy them, because nobody else hit your exact wall."
+                ]
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "The project is finished but I never wrote anything down",
+              "fix": "Rebuild the trail instead of your memory: browser history shows every page you searched, terminal history shows every command, and your Downloads folder shows every tool. An hour of forensics beats guessing what step 3 was."
+            },
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "I keep wanting to pick a project that is almost done",
+              "fix": "Do not. An unfinished project turns the walkthrough into a second project, and now two things are half done. Finish it first, or pick something older that already works."
+            },
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "Two steps keep trying to merge into one",
+              "fix": "Check when each one finishes. If their checkpoint facts happen at different moments, they are different steps no matter how related they feel. Flashing a drive and booting from it feel like one motion and are absolutely two steps."
+            }
+          ],
+          "done": "One page holds your finish line, 5 to 9 named steps with one checkpoint each, and your list of problems with their fixes."
+        },
+        {
+          "id": "workbench",
+          "title": "Set up your workbench",
+          "intro": "You need exactly three things: a code editor, a browser, and a folder. Nothing to buy, nothing complicated to configure. The whole build runs on one loop: edit, save, refresh, look.",
+          "prereqs": [
+            "A computer you can install a small free editor on",
+            "Any modern browser (Chrome, Edge, Firefox, Safari)"
+          ],
+          "actions": [
+            {
+              "text": "Install a code editor. VS Code is the safe pick, and any code editor works; TextEdit only counts if you switch it to plain text mode. The install guides on the editors' own sites are good: follow one and come back.",
+              "older": "Install a code editor. VS Code and Notepad++ are both free and the safe picks; plain Notepad works in a pinch, Word never does. The install guides on the editors' own sites are good: follow one and come back."
+            },
+            "Create a project folder somewhere you can find it, named in lowercase-with-hyphens, like my-first-walkthrough. That naming is a GitHub habit you will want later.",
+            "In your editor, create a new file and save it into that folder as index.html, exactly that name. It can stay empty for one more step.",
+            {
+              "text": "Arrange the screen: this app on one half, your editor and browser on the other. Your build loop from here on is edit, save (Cmd + S), refresh the browser (Cmd + R), look.",
+              "older": "Arrange the screen: this app on one half, your editor and browser on the other. Your build loop from here on is edit, save (Ctrl + S), refresh the browser (F5), look."
+            }
+          ],
+          "cheat": [
+            {
+              "title": "The workbench, decoded",
+              "cols": [
+                "Item",
+                "How to do it",
+                "Why it matters"
+              ],
+              "rows": [
+                [
+                  "A code editor, never a word processor",
+                  "Write all code in VS Code, Notepad++, or similar. If pasting from anywhere, paste into the editor, not through a document.",
+                  "Word processors quietly replace straight quotes with curly ones and add invisible formatting. Code needs exactly the characters you typed, nothing more."
+                ],
+                {
+                  "older": [
+                    "Make file extensions visible",
+                    "In File Explorer, open the View menu and tick 'File name extensions'.",
+                    "Windows hides extensions by default, so a file named index.html can secretly be index.html.txt, and the browser treats those very differently."
+                  ],
+                  "newer": [
+                    "Confirm the real file name",
+                    "In Finder, select the file and press Cmd + I to see its full name and extension.",
+                    "An invisible .txt on the end is the classic reason a page refuses to behave like a page."
+                  ]
+                },
+                [
+                  "The save-refresh loop",
+                  "Change the file, save it, switch to the browser, refresh. Repeat forever.",
+                  "This is the fastest feedback loop in computing, and it is the entire development workflow for this project. No build tools, no waiting."
+                ],
+                [
+                  "Why index.html specifically",
+                  "Name the file index.html, all lowercase, and keep it at the top of the project folder.",
+                  "Web servers, including GitHub Pages later, look for exactly this file name as a site's front door."
+                ]
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "tags": [
+                "Windows"
+              ],
+              "problem": "I named it index.html but the browser opens it as plain text",
+              "fix": "The file is really index.html.txt with the .txt hidden. Turn on 'File name extensions' in File Explorer's View menu, rename the file to remove the .txt, and open it again."
+            },
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "I edited the file but the browser shows the old version",
+              "fix": "Two usual causes: the file was not saved (look for a dot or asterisk on the editor tab), or the browser has a different file open. Save first, then check the browser's address bar points at the file inside your project folder, then refresh."
+            }
+          ],
+          "done": "An empty index.html sits inside its own folder, with your editor on one side of the screen and this app on the other."
+        },
+        {
+          "id": "html",
+          "title": "HTML: build the skeleton",
+          "intro": "HTML is the structure of a page: labeled containers holding text and each other. You are about to type the standard skeleton every page on the internet starts from, then put your first visible words inside it.",
+          "actions": [
+            {
+              "text": "Type this into your empty index.html. Type it rather than pasting if you can spare the two minutes; your hands learn the shapes.",
+              "code": "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"utf-8\">\n  <title>My Walkthrough<\/title>\n<\/head>\n<body>\n\n<\/body>\n<\/html>"
+            },
+            "Read what you typed. Tags come in pairs: an opener like <head> and a closer like <\/head>, and whatever sits between them belongs to that tag. The head holds information about the page; the body holds what appears on the page.",
+            {
+              "text": "Put your first content between <body> and <\/body>:",
+              "code": "<h1>My Walkthrough<\/h1>\n<p class=\"tagline\">One step at a time.<\/p>\n<main id=\"main\"><\/main>"
+            },
+            "Save the file, then find it in your folder and double-click it. It opens in your browser as a real page: your heading in big serif letters, your tagline under it.",
+            "One deliberate mystery remains: the main element renders as nothing, because it is empty. It is the stage. In three steps, your JavaScript will build the whole app inside it."
+          ],
+          "cheat": [
+            {
+              "title": "HTML, decoded",
+              "cols": [
+                "Piece",
+                "How it works",
+                "Why it matters"
+              ],
+              "rows": [
+                [
+                  "Tags and nesting",
+                  "<p>Hello<\/p> is a paragraph holding the word Hello. Tags can hold other tags, and every opener needs its closer.",
+                  "Nesting is the whole grammar of HTML. When a page breaks, the first suspect is a tag that never got closed."
+                ],
+                [
+                  "head vs body",
+                  "Everything for the browser (the tab title, the character set, later your styles) goes in head. Everything for the human goes in body.",
+                  "Mixing them up will not crash anything, but knowing the split is what makes the file readable at a glance."
+                ],
+                [
+                  "The id attribute",
+                  "<main id=\"main\"> gives the element a name. In JavaScript, document.getElementById('main') finds it.",
+                  "An id is the handle code grabs an element by. The full engine finds its header, main area, and overlays exactly this way."
+                ],
+                [
+                  "<!DOCTYPE html> and charset",
+                  "The first line tells the browser this is modern HTML; the meta charset line makes text like accents render correctly.",
+                  "Two lines of boilerplate that prevent an entire category of weird, hard-to-search bugs."
+                ]
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "The browser shows my raw code instead of a page",
+              "fix": "The file extension is not really .html, or the file opened inside the editor's preview instead of a browser. Check the extension first (see the last step's cheat sheet), then open the file with the browser directly: right click it and pick Open with."
+            },
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "My heading did not appear",
+              "fix": "Almost always an unclosed tag or content typed outside the body. Check that the h1 line sits between <body> and <\/body>, and that every opener has a matching closer with the slash: <\/h1>."
+            }
+          ],
+          "done": "Your browser shows your heading and tagline, rendered from a file you wrote yourself."
+        },
+        {
+          "id": "css",
+          "title": "CSS: make it look designed",
+          "hardware": true,
+          "intro": "CSS is a list of rules: find these elements, apply these looks. Four small rules take your page from default-browser gray to something with a visible point of view: warm paper, ink text, one card.",
+          "actions": [
+            {
+              "text": "Add a style block inside your head, just below the title line, and give the whole page its base look:",
+              "code": "<style>\n  body {\n    font-family: Georgia, 'Times New Roman', serif;\n    background: #f2efe8;\n    color: #26272b;\n    max-width: 680px;\n    margin: 40px auto;\n    padding: 0 16px;\n  }\n<\/style>"
+            },
+            {
+              "text": "Save and refresh. The page re-centers on warm paper with serif text. Now add the card rule inside the same style block, below the body rule:",
+              "code": "  .card {\n    background: #fffdf8;\n    border: 1px solid #ddd6c8;\n    border-radius: 10px;\n    padding: 24px;\n    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);\n  }"
+            },
+            "Save and refresh again: nothing changes, and that is correct. A class rule is an outfit waiting for an element to wear it. Put it on: change your tagline's opening tag to <p class=\"card\"> and refresh. There is your card.",
+            {
+              "text": "Add the button rule too, under the card rule. No button exists on the page yet; the outfit will be waiting when JavaScript makes one:",
+              "code": "  button {\n    font: inherit;\n    padding: 10px 18px;\n    border: 1px solid #26272b;\n    border-radius: 8px;\n    background: #26272b;\n    color: #fffdf8;\n    cursor: pointer;\n  }"
+            },
+            "Make one choice of your own before moving on: change the background color to another hex value (search 'color picker' in a browser for values), refresh, and pick what you like. This page is yours."
+          ],
+          "cheat": [
+            {
+              "title": "CSS, decoded",
+              "cols": [
+                "Piece",
+                "How it works",
+                "Why it matters"
+              ],
+              "rows": [
+                [
+                  "The rule anatomy",
+                  "selector { property: value; } means find the elements the selector names, then set each property. body { color: #26272b; } inks all text.",
+                  "Every line of CSS you will ever read is this one shape repeated."
+                ],
+                [
+                  "Tag selectors vs class selectors",
+                  "body and button (no dot) style every element of that tag. .card (with the dot) styles only elements carrying class=\"card\".",
+                  "Tags set the defaults, classes dress the exceptions. The full engine works exactly this way: a few tag rules, then classes like .act-row and .xbtn."
+                ],
+                [
+                  "Hex colors",
+                  "#f2efe8 is a color written as red, green, and blue values. Any online color picker translates a swatch into hex.",
+                  "Colors are the fastest way to make a template feel owned. Two minutes in a picker beats an hour of doubting."
+                ],
+                [
+                  "Design tokens (a preview)",
+                  "The full engine defines every color once at the top as variables like --ink, then reuses them everywhere.",
+                  "Change one line, recolor the whole app. You will meet this pattern when you graduate to the engine, and now you will recognize what it is for."
+                ]
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "My CSS rule does nothing",
+              "fix": "Check the four usual suspects in order: the rule sits inside the style block, the style block sits inside the head, class names match exactly (card in the rule, card on the element), and every property line ends with a semicolon."
+            },
+            {
+              "tags": [
+                "Mac or Linux"
+              ],
+              "problem": "The file broke after I pasted text in from a document",
+              "fix": "Curly quotes came along for the ride. TextEdit and word processors curl quotes by default, and code needs straight ones. Retype the quotes inside your editor and set TextEdit to plain text mode before ever pasting again."
+            },
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "A comment I added silently broke the styling",
+              "fix": "This happened building this very app: an HTML-style comment pasted inside the style block ate the next rule. The browser never complained, the page just looked subtly wrong, and review caught it rather than any error message. Inside a style block, comments must use the slash-star form; HTML comments belong outside it."
+            }
+          ],
+          "done": "Your page shows warm paper, ink text, and your tagline sitting inside a real card, with colors you chose."
+        },
+        {
+          "id": "json",
+          "title": "JSON: your project becomes data",
+          "intro": "Here is the design idea the whole app stands on: the content is not written into the page, it is written as data, and code draws the page from it. JSON is the format that data takes. Time to write your project in it.",
+          "actions": [
+            {
+              "text": "Add a script block at the bottom of your body, just above <\/body>. Everything JavaScript happens in here:",
+              "code": "<script>\n\n<\/script>"
+            },
+            {
+              "text": "Inside the script block, type your project as data. The example below shows the shape with two Proxmox steps; use your own project's first two steps from your paper map:",
+              "code": "const PROJECT = {\n  \"title\": \"Install Proxmox on an Old PC\",\n  \"tagline\": \"One journey, seven steps.\",\n  \"steps\": [\n    {\n      \"title\": \"Recon: know what you have\",\n      \"actions\": [\n        \"Note the make and model of the PC.\",\n        \"Confirm the CPU supports virtualization.\"\n      ],\n      \"done\": \"You know your model, CPU, and target drive.\"\n    },\n    {\n      \"title\": \"Make the bootable drive\",\n      \"actions\": [\n        \"Download the installer ISO.\",\n        \"Flash it to a USB drive in DD mode.\"\n      ],\n      \"done\": \"The flash tool reports success.\"\n    }\n  ]\n};"
+            },
+            "Read the shape you just typed. Curly braces make an object: a labeled box of \"name\": value pairs. Square brackets make an array: an ordered list. So PROJECT is an object holding a title, a tagline, and an array of steps, and each step is an object holding a title, an array of actions, and a done line.",
+            {
+              "text": "Prove the data is real. Add this line below the closing brace and semicolon, save, refresh, and watch the browser tab rename itself to your title:",
+              "code": "document.title = PROJECT.title;"
+            },
+            "That one line is JavaScript reading your data: PROJECT.title means 'the title inside PROJECT'. The dot reaches into an object. Keep the line; the full engine does exactly the same thing."
+          ],
+          "cheat": [
+            {
+              "title": "JSON survival rules",
+              "cols": [
+                "Rule",
+                "How to do it",
+                "Why it matters"
+              ],
+              "rows": [
+                [
+                  "Straight quotes only",
+                  "Every quote is the plain \" character. Type inside a code editor and this happens automatically.",
+                  "One curly quote from a word processor kills the entire file. This is the number one hand-edit error."
+                ],
+                [
+                  "Commas between, never after the last",
+                  "Every item in a list gets a comma after it except the final one.",
+                  "A trailing comma after the last item is the number two hand-edit error, and the browser's error message for it is unhelpfully vague."
+                ],
+                [
+                  "A quote inside your text",
+                  "To put a quote character inside a sentence, type \\\" instead of \".",
+                  "An unescaped quote ends the string early, and everything after it becomes a syntax error."
+                ],
+                [
+                  "The one forbidden phrase",
+                  "Never leave a literal closing script tag inside your data text. If you need to show one, escape the slash: <\\/script>.",
+                  "The browser ends the script element at the first closing script tag it sees, even inside a quoted string. This bit us building this very app: the code samples you are reading contain script tags, and the app went blank until they were escaped."
+                ],
+                [
+                  "Objects vs arrays",
+                  "{ } is a labeled box, and you reach inside with a dot: PROJECT.title. [ ] is an ordered list, and steps live in one so they stay in order.",
+                  "These two containers, nested inside each other, describe your entire app. There is no third thing to learn."
+                ]
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "How do I know I typed the data right if the page shows nothing new?",
+              "fix": "Two checks. First, press F12, open the Console tab, and refresh: no red lines means the browser read your data without complaint. Second, the tab-rename line from the last action is itself a test: if the tab shows your title, PROJECT parsed and JavaScript can read it."
+            },
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "The console shows a red error naming a line number",
+              "fix": "That line number is a gift: it points at or just after the mistake. It is almost always a missing comma, a comma after the last item, or an unescaped quote. Fix, save, refresh, and repeat until the console is quiet."
+            }
+          ],
+          "done": "The browser tab shows your project's title, proving your data parses and JavaScript can read it."
+        },
+        {
+          "id": "javascript",
+          "title": "JavaScript: the moving parts",
+          "intro": "Everything so far was setup for this card. You are about to build a working app on one idea: the page always shows a drawing of the current state, and clicking changes the state and redraws. About twenty lines. Type them; this is the step where it clicks.",
+          "actions": [
+            {
+              "text": "Below the tab-rename line, create the app's entire memory: one number holding which step is on screen. let means it can change later, unlike const:",
+              "code": "let cur = 0;"
+            },
+            {
+              "text": "Now the heart: a function that reads the current step from your data, builds the HTML for one card as a string, and hands it to the empty main element. Type it slowly and read each line as you go:",
+              "code": "function render() {\n  const s = PROJECT.steps[cur];\n  let html = '<div class=\"card\">';\n  html += '<h2>Step ' + (cur + 1) + ' of ' + PROJECT.steps.length + '<\/h2>';\n  html += '<h3>' + s.title + '<\/h3>';\n  html += '<ol>';\n  for (const a of s.actions) {\n    html += '<li>' + a + '<\/li>';\n  }\n  html += '<\/ol>';\n  html += '<p><b>You are done when:<\/b> ' + s.done + '<\/p>';\n  if (cur < PROJECT.steps.length - 1) {\n    html += '<button onclick=\"next()\">Next step<\/button>';\n  } else {\n    html += '<p><b>All steps complete!<\/b><\/p>';\n  }\n  html += '<\/div>';\n  document.getElementById('main').innerHTML = html;\n}"
+            },
+            {
+              "text": "Two small pieces remain: the function the button calls (change the state, then redraw), and one first call to render() so the app draws itself on load:",
+              "code": "function next() {\n  cur = cur + 1;\n  render();\n}\nrender();"
+            },
+            "Save and refresh. Your first step is on screen, inside your card style, with a working Next button. Click through your whole project to the end.",
+            "Now trace the loop out loud once, because this loop is the entire architecture: the button's onclick calls next(), next() changes cur, render() redraws main from the data at the new cur. Click, state, render. The full engine is this exact loop with more state."
+          ],
+          "cheat": [
+            {
+              "title": "JavaScript, decoded",
+              "cols": [
+                "Piece",
+                "How it works",
+                "Why it matters"
+              ],
+              "rows": [
+                [
+                  "let cur = 0",
+                  "One variable holding the current step's position. Arrays count from 0, which is why the display prints cur + 1.",
+                  "This is state: the app's memory. Every interactive app you have ever used is state plus a drawing of it."
+                ],
+                [
+                  "function render()",
+                  "Reads PROJECT.steps[cur], builds one card's HTML as a string with +, and sets main's innerHTML to it, replacing whatever was there.",
+                  "One function owns the screen. Nothing else touches the page, so there is exactly one place to look when the screen is wrong."
+                ],
+                [
+                  "The for loop",
+                  "for (const a of s.actions) runs its lines once per action, so every step renders its own list without you writing it twice.",
+                  "Loops are why data-driven beats hand-written: ten actions or two, the same three lines draw them."
+                ],
+                [
+                  "onclick=\"next()\"",
+                  "The button carries the name of the function to call when clicked. That is the entire wiring.",
+                  "Click, state change, redraw. Trace this triangle and you can read the full engine, which runs the same triangle with saved state."
+                ]
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "The page is completely blank after adding the script",
+              "fix": "Press F12 and read the Console's first red line: it names the line number of the mistake. The usual suspects are a missing quote or brace inside render(), or the script block accidentally sitting outside the body. Fix, save, refresh."
+            },
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "The card shows but the Next button does nothing",
+              "fix": "The button's onclick spelling must match the function name exactly: next in both places. Also check next() was typed outside render's closing brace; a function defined inside another one is invisible to the button."
+            },
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "It says 'Cannot read properties of undefined'",
+              "fix": "The code asked for a step that does not exist, usually PROJECT.steps[cur] after cur ran past the end. Check the if line that hides the Next button on the last step, and that steps.length is spelled exactly."
+            }
+          ],
+          "done": "Clicking Next walks through every step of your project, in an app you built from nothing."
+        },
+        {
+          "id": "engine",
+          "title": "Graduate to the full engine",
+          "intro": "Your small app proves you understand every moving part. The full engine is the same click-state-render loop with saving, two modes, fork toggles, and panels: about 700 lines you do not retype. You adopt it, move your data in, and read it like a map of a city you already know.",
+          "actions": [
+            "Get the engine: open the finished Proxmox walkthrough's repo (or this app's repo), open index.html, click the Raw button, and save the page as index.html into a fresh folder. Same engine, different data: that is the design.",
+            "Open the file in your editor and find the two data markers inside the script (the big comment above them explains the layout). Everything between them is data; everything outside is engine you now recognize.",
+            {
+              "text": "Replace the data between the markers with your PROJECT data from your small app, then add the header fields the full engine expects at the top of the object, before \"steps\". Swap the example words for your own:",
+              "code": "\"id\": \"my-project-walkthrough\",\n\"title\": \"Install Proxmox on an Old PC\",\n\"tagline\": \"Turn a forgotten desktop into a home server.\",\n\"hardwareLabels\": { \"older\": \"Older PC\", \"newer\": \"Newer PC\" },\n\"forkTags\": { \"older\": \"Older PC\", \"newer\": \"Newer PC\" },\n\"hardwareQuestion\": \"This machine is\",\n\"congratsAfter\": \"On to the next project.\","
+            },
+            "Take the tour: read the CODE MAP comment at the top of the script and match the pieces to what you built. Your cur is the engine's state.cur, your render() is its render(), your PROJECT is its PROJECT. Every function carries a comment saying what it does and who calls it.",
+            "Save, double-click, and walk your own project inside the real app: chooser screen, progress dots, ticks, the Big Picture."
+          ],
+          "cheat": [
+            {
+              "title": "What the full engine adds, and where to read it",
+              "cols": [
+                "Feature",
+                "What it does",
+                "Where to read it in the file"
+              ],
+              "rows": [
+                [
+                  "Saved progress",
+                  "Your ticks and position survive closing the browser, stored under the app's id.",
+                  "The store wrapper near the top of the script, and loadState just under the state object."
+                ],
+                [
+                  "Two modes",
+                  "Hands-on gates each step behind its ticks; Just Browsing roams free for readers.",
+                  "renderChooser draws the choice; the hands variable inside renderStep applies it."
+                ],
+                [
+                  "The fork toggle",
+                  "One walkthrough serves two situations (older and newer PCs, or Windows and Mac) by swapping tagged content.",
+                  "hwLabel and visibleActions in the data helpers."
+                ],
+                [
+                  "Cheat sheets and issues",
+                  "Depth and troubleshooting fold away under buttons so cards stay calm.",
+                  "The extras row inside renderStep, and the openPanel variable above it."
+                ],
+                [
+                  "The safety valve",
+                  "Every piece of data text passes through esc() before touching the page.",
+                  "The tiny dom helpers section. It is three functions; read all three."
+                ]
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "Blank page after moving my data in",
+              "fix": "Same diagnosis as before, bigger file: F12, Console, first red line. It is almost always a comma at the seam where your data met the new header fields, or a missing comma after \"congratsAfter\"."
+            },
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "My saved ticks vanished after I changed the id",
+              "fix": "Working as designed: the id keys the saved progress, so a new id means a fresh slate. Settle on the id early and leave it alone."
+            },
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "The file is 700 lines and I am afraid to scroll",
+              "fix": "You only ever edit between the two data markers, and you have already built the hard parts once by hand. The comments are a guided tour, and the worst case is a blank page plus an F12 line number, which you have now fixed several times."
+            }
+          ],
+          "done": "Your project runs inside the full engine, and you can point at each engine part and say what it does."
+        },
+        {
+          "id": "content",
+          "title": "Write the deep content",
+          "intro": "Your app runs; now make it teach. Depth goes in cheat tables, honesty goes in the issues panel, and forks appear only where your project truly forked. Every shape below drops straight into your data.",
+          "actions": [
+            "Rewrite your actions to stand alone: could someone do each one with no other tab open? Short recipes go inside the action (press Win + R, type dxdiag, press Enter), and a leading label sets the location when it matters ('Inside BIOS:').",
+            {
+              "text": "Wherever an action keeps growing into a paragraph, it is smuggling a why. Move the why into a cheat table on that step, written how-first:",
+              "code": "\"cheat\": [\n  {\n    \"title\": \"Recon cheat sheet\",\n    \"cols\": [\"Item\", \"How to do it\", \"Why it matters\"],\n    \"rows\": [\n      [\"Check specs fast\", \"Press Win + R, type dxdiag, press Enter.\", \"Works on any Windows box, no installs.\"]\n    ]\n  }\n]"
+            },
+            {
+              "text": "Turn your problem list from step 1 into issues, one per problem, tagged 'All setups' or with a fork word:",
+              "code": "\"issues\": [\n  {\n    \"tags\": [\"All setups\"],\n    \"problem\": \"The finished drive will not boot\",\n    \"fix\": \"What actually fixed it for you, in first person and past tense.\"\n  }\n]"
+            },
+            {
+              "text": "Fork an action only where your project truly split into two situations. The engine shows the version matching the toggle:",
+              "code": "{\n  \"text\": \"The newer-machine version of the instruction.\",\n  \"older\": \"The older-machine version of the instruction.\"\n}"
+            },
+            {
+              "text": "Add method buttons only where you genuinely used two tools. Each method carries its own action list:",
+              "code": "\"methods\": {\n  \"Tool A\": { \"actions\": [\"First action using Tool A.\", \"Second action.\"] },\n  \"Tool B\": { \"actions\": [\"First action using Tool B.\", \"Second action.\"] }\n}"
+            },
+            {
+              "text": "Give a What You Need box to any step where arriving unprepared hurts:",
+              "code": "\"prereqs\": [\n  \"A USB drive, 8 GB or larger, that can be erased\",\n  \"About an hour\"\n]"
+            }
+          ],
+          "cheat": [
+            {
+              "title": "Copy rules, locked from the first build",
+              "cols": [
+                "Rule",
+                "How to apply it",
+                "Why it matters"
+              ],
+              "rows": [
+                [
+                  "Plain names for things",
+                  "Write USB drive, not stick. Write PC, not box. Pick the clearest everyday word every time.",
+                  "The reader following along and the hiring manager skimming both need zero decoding."
+                ],
+                [
+                  "First-person facts, zero theater",
+                  "Keep what happened ('the port swap ended it in one try'), cut the drama ('this cost me a whole night').",
+                  "Real experience builds trust. Suffering framing just makes the work look slow."
+                ],
+                [
+                  "Concrete numbers where true",
+                  "8 GB RAM, a 16 GB drive cap, port 8006. Only claim numbers you verified yourself.",
+                  "Numbers are the fastest trust signal in technical writing, and the easiest thing to get caught inflating."
+                ],
+                [
+                  "Tables only for uniform sets",
+                  "A table earns its place when every row answers the same columns. Anything else becomes prose or an action.",
+                  "Half-empty tables read as decoration. Uniform ones read as reference."
+                ]
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "My new issue never appears in the app",
+              "fix": "Its tag must exactly match one of three things: the words 'All setups', one of your forkTags values, or a method name on that step. One character off and the engine treats it as a tag for a fork that does not exist, so it never shows."
+            },
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "I want to include a tool I did not actually use",
+              "fix": "Leave it out, or say plainly that you did not use it. The app's whole value is that every line is verified by you. One borrowed claim poisons the rest."
+            }
+          ],
+          "done": "Every step carries its depth: cheat rows where the why lives, issues from your real problem list, and forks only where your project truly forked."
+        },
+        {
+          "id": "selftest",
+          "title": "Test it like a stranger",
+          "intro": "You are the first user. Run the app the way a stranger would, obey only what the cards say, and fix what fails. This is also where the little Python helper gets explained, module by module, for anyone who wants the automated docs.",
+          "actions": [
+            "Self-test in Hands-on mode: do or verify every action exactly as written, ticking as you go. Anywhere you have to improvise, the card is wrong. Fix the card, not your behavior.",
+            "Read the whole app once in Just Browsing, and fix anything that only makes sense with your memories attached.",
+            "Flip the fork both ways on every step that forks and read both versions. Forked actions and table rows hide easily.",
+            "Sweep the file for banned characters before shipping: em dashes, curly quotes, and emoji. Use your editor's search and fix everything it finds.",
+            {
+              "text": "Optional: generate the companion Markdown docs. Copy tools/generate_docs.py from the repo you took the engine from into a tools folder next to your index.html, open a terminal in the app's folder, and run:",
+              "code": {
+                "older": "python tools\\generate_docs.py",
+                "newer": "python3 tools/generate_docs.py"
+              }
+            }
+          ],
+          "cheat": [
+            {
+              "title": "Self-test moves that catch the most",
+              "cols": [
+                "Move",
+                "How to do it",
+                "Why it matters"
+              ],
+              "rows": [
+                [
+                  "Obey only the cards",
+                  "Pretend your memory of the project is gone. If an action cannot be completed as written, it fails the test.",
+                  "You are the only tester who can compare the cards against reality. A stranger can only compare them against confusion."
+                ],
+                [
+                  "Read for missing context",
+                  "In Just Browsing, ask of every line: does this make sense to someone who was not there?",
+                  "Writers unconsciously lean on what they remember. Browsing mode is where that leaning shows."
+                ],
+                [
+                  "The character sweep",
+                  "Search for the em dash, the four curly quote characters, and any emoji. Replace with plain equivalents.",
+                  "These sneak in through copy-paste, break the professional register, and curly quotes can break the JSON itself."
+                ]
+              ]
+            },
+            {
+              "title": "The generator script, decoded (your first Python read)",
+              "cols": [
+                "Piece",
+                "What it does",
+                "Why it is there"
+              ],
+              "rows": [
+                [
+                  "import json",
+                  "Takes the text between the data markers and turns it into a Python object the script can walk, step by step, exactly like your JavaScript reads PROJECT.",
+                  "One data block drives both the app and the docs, so the copy can never drift apart. Single source of truth, automated."
+                ],
+                [
+                  "import os",
+                  "Creates the docs folder when it is missing and joins folder and file names into paths.",
+                  "Windows writes paths with backslashes and Mac or Linux with forward slashes; os smooths that over so one script runs everywhere."
+                ],
+                [
+                  "import sys",
+                  "Stops the script early with a plain message when something is wrong, like being run from the wrong folder.",
+                  "A clear exit with a sentence beats a confusing crash with a traceback. Good scripts fail politely."
+                ],
+                [
+                  "The loop over steps",
+                  "Walks every step, collects the intros, checkpoints, and issues, and writes them out as Markdown lines.",
+                  "Change the app's data, rerun the script, and the docs rebuild themselves. Automating the boring parts is the whole habit this portfolio demonstrates."
+                ]
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "tags": [
+                "Windows"
+              ],
+              "problem": "'python' is not recognized as a command",
+              "fix": "Python is not installed or not on the PATH. Install it from python.org and tick 'Add python.exe to PATH' in the installer's first screen, then close and reopen the terminal and run the command again."
+            },
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "I keep polishing the visuals instead of finishing the test",
+              "fix": "Ship the walkthrough first and screenshot polish later. A visuals pass has no checkpoint, which makes it a comfortable place to hide. The self-test has one: you finished your own app obeying only the cards."
+            }
+          ],
+          "done": "You completed your own app start to finish obeying only the cards, both fork sides read clean, and the character sweep came back empty."
+        },
+        {
+          "id": "publish",
+          "title": "Publish it on GitHub",
+          "intro": "The step that turns a file on your desk into a link anyone on earth can open. Two full paths below: pure browser, or the GitHub Desktop app. Both end at a live URL that costs nothing.",
+          "methodsLabel": "Pick your path",
+          "methods": {
+            "Upload in the browser": {
+              "actions": [
+                "Create a free account at github.com if you do not have one, and sign in.",
+                "Click New repository. Name it in lowercase-with-hyphens (your project folder's name is perfect), set it to Public, tick 'Add a README file', and create it.",
+                "On the repo page click Add file, then Upload files, and drag in your index.html (plus the docs and tools folders if you have them).",
+                "Write a commit message that says what and why ('Add walkthrough app, first public version'), then click Commit changes.",
+                "Open Settings, then Pages. Under Build and deployment choose Deploy from a branch, pick main and / (root), and click Save.",
+                "Wait a few minutes, then open https://YOUR-USERNAME.github.io/YOUR-REPO-NAME/ in a new tab. That is your app, live on the internet.",
+                "Edit the README and put the live link at the very top, before anything else."
+              ]
+            },
+            "GitHub Desktop": {
+              "actions": [
+                "Install GitHub Desktop from desktop.github.com and sign in with your GitHub account.",
+                "Choose File, then New repository. Name it in lowercase-with-hyphens and let it create a fresh local folder.",
+                "Move your index.html (plus the docs and tools folders) into that folder. GitHub Desktop lists them as changes.",
+                "Write a commit summary that says what and why, click Commit to main, then click Publish repository and untick 'Keep this code private'.",
+                "On github.com, open the repo's Settings, then Pages: Deploy from a branch, main, / (root), Save.",
+                "Wait a few minutes, then open https://YOUR-USERNAME.github.io/YOUR-REPO-NAME/. That is your app, live on the internet.",
+                "Edit the README, put the live link at the very top, commit, and push."
+              ]
+            }
+          },
+          "cheat": [
+            {
+              "title": "GitHub words, decoded",
+              "cols": [
+                "Item",
+                "What it is",
+                "Why it matters here"
+              ],
+              "rows": [
+                [
+                  "Repo vs Pages",
+                  "The repo stores your files and their full history. Pages is GitHub's free web server that runs whatever sits on the branch you point it at.",
+                  "One project produces two links: the repo shows your source, and the Pages URL runs the app."
+                ],
+                [
+                  "The Public requirement",
+                  "On a free account, Pages only serves Public repositories.",
+                  "A Private repo simply has no Pages section in Settings. Public is also the point: this is a portfolio."
+                ],
+                [
+                  "Commit messages",
+                  "The one-line note attached to every change, visible to anyone browsing the repo forever.",
+                  "Recruiters actually scroll these. 'Fix boot-order wording after self-test' is a work sample; 'update' is a shrug."
+                ],
+                [
+                  "The two links",
+                  "github.com/you/repo shows code. you.github.io/repo runs the app.",
+                  "Send people the Pages link, and keep the repo link for the README's view-source line. Mixing them up is the top visitor complaint."
+                ]
+              ]
+            },
+            {
+              "title": "Recording the demo GIF",
+              "cols": [
+                "Platform",
+                "How to do it"
+              ],
+              "rows": [
+                {
+                  "older": [
+                    "Windows",
+                    "Install ScreenToGif (free), record about ten seconds of the app being used, and export as GIF."
+                  ],
+                  "newer": [
+                    "Mac or Linux",
+                    "Record with the built-in screen recorder (Shift + Cmd + 5 on a Mac, or your distro's recorder), then convert the clip to GIF with a free converter like ezgif."
+                  ]
+                }
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "The Pages URL shows a 404",
+              "fix": "Two usual causes. Pages needs a few minutes after the first deploy, and the file must be named exactly index.html sitting at the repo root. Wait, refresh, then check the filename and its location."
+            },
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "Visitors see a wall of code instead of the app",
+              "fix": "They got the repo link. Send the github.io Pages URL instead, and put that live link first in the README so nobody has to dig for it."
+            },
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "Settings has no Pages section at all",
+              "fix": "The repo is Private. Switch it to Public (Settings, General, then the Danger Zone at the bottom) and the Pages section appears."
+            }
+          ],
+          "done": "The github.io link opens your app on a device that has never seen your files, and the README leads with that link."
+        },
+        {
+          "id": "portfolio",
+          "title": "Wire it into the portfolio",
+          "intro": "A live app nobody can find does not exist. Ten minutes of wiring makes it the first thing a visitor meets, then the loop restarts on the next project.",
+          "actions": [
+            "Pin the repo on your GitHub profile: open your profile page and use 'Customize your pins'.",
+            "In your profile README, add the project with the live Pages link first and the repo link second.",
+            "Record the ten-second GIF from the last step's cheat sheet and put it at the very top of the repo's README.",
+            "Add a 'What broke and how I fixed it' section to the repo README, lifted straight from your app's issues panel.",
+            "Create the notes file for your next project right now, while the habit is warm, and write its first line."
+          ],
+          "cheat": [
+            {
+              "title": "README order that converts",
+              "cols": [
+                "Element",
+                "Where it goes",
+                "Why it matters"
+              ],
+              "rows": [
+                [
+                  "The GIF",
+                  "The very top of the repo README.",
+                  "Image proof loads before a single word gets read, and it proves the app is real."
+                ],
+                [
+                  "Live link before source link",
+                  "The first line under the GIF: try it live, then view the source.",
+                  "Most visitors click exactly one thing. Make it the running app."
+                ],
+                [
+                  "What broke and how I fixed it",
+                  "Its own section, above the how-to-run details.",
+                  "Fixed problems are the strongest hiring signal in the whole repo, and no template can fake them."
+                ]
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "tags": [
+                "All setups"
+              ],
+              "problem": "My profile shows plenty of green squares but nothing to click",
+              "fix": "Density is not proof. Pins, a GIF, and a live link are what a visitor can actually experience in thirty seconds. One pinned live app outweighs a wall of activity."
+            }
+          ],
+          "done": "The repo is pinned, the live link sits first everywhere it appears, the GIF plays at the top of the README, and the next project's notes file exists."
+        }
+      ]
+    }/*__STEPS_DATA_END__*/;
+
+    /* ------------------------------------------------------------
+       Storage wrapper.
+       localStorage works on GitHub Pages and on a double-clicked
+       local file, which are this app's real homes. Some embedded
+       previews sandbox it away, so everything falls back to
+       in-memory state and the app keeps working for the session.
+    ------------------------------------------------------------ */
+    const mem = {};
+    const store = {
+      get(k) { try { const v = localStorage.getItem(k); return v === null ? (k in mem ? mem[k] : null) : v; } catch (e) { return k in mem ? mem[k] : null; } },
+      set(k, v) { try { localStorage.setItem(k, v); } catch (e) { } mem[k] = v; },
+      del(k) { try { localStorage.removeItem(k); } catch (e) { } delete mem[k]; }
+    };
+
+    /* NS prefixes every storage key with this app's id, so two
+       walkthroughs hosted side by side never share progress.
+       WORDS turns the step count into the finish screen's
+       "Seven times." line. */
+    const NS = 'osaat:' + PROJECT.id + ':';
+    const WORDS = { 1: 'Once', 2: 'Twice', 3: 'Three times', 4: 'Four times', 5: 'Five times', 6: 'Six times', 7: 'Seven times', 8: 'Eight times', 9: 'Nine times', 10: 'Ten times', 11: 'Eleven times', 12: 'Twelve times' };
+
+    /* ------------------------------------------------------------
+       STATE: the app's entire memory, one plain object.
+       Every screen is drawn from this and nothing else. If you
+       want to know why something is on screen, the answer is in
+       here; if you want to change what is on screen, change this
+       (through a click handler) and call render().
+    ------------------------------------------------------------ */
+    let state = {
+      mode: null,                 // 'handson' | 'browse' | null (null shows the chooser)
+      hw: 'older',                // which fork toggle side is selected: 'older' | 'newer'
+      cur: 0,                     // index of the step currently on screen
+      method: {},                 // stepId -> chosen method name (which tool pill is on)
+      ticks: {},                  // "stepId|method|idx" -> true for every ticked checkbox
+      done: {},                   // stepId -> true once its Next was clicked with all ticks
+      finished: false             // true only while the congrats screen is showing
+    };
+
+    /* loadState runs once at startup (see the wire-up at the very
+       bottom): it merges any saved progress over the defaults
+       above, then lets a URL like ?mode=browse skip the chooser.
+       saveState is called by every click handler right before
+       render(), so saved progress always matches the screen. */
+    function loadState() {
+      const raw = store.get(NS + 'state');
+      if (raw) { try { state = Object.assign(state, JSON.parse(raw)); } catch (e) { } }
+      const p = new URLSearchParams(location.search).get('mode');
+      if (p === 'browse' || p === 'handson') state.mode = p;
+    }
+    function saveState() { store.set(NS + 'state', JSON.stringify(state)); }
+
+    /* ------------------------------------------------------------
+       DATA HELPERS: read-only questions about the data and state.
+       None of these draw anything or change anything; the render
+       functions below call them to decide what to show.
+    ------------------------------------------------------------ */
+    const steps = PROJECT.steps;
+
+    /* methodNames: the step's tool pill labels (like Rufus and
+       Ventoy), or null when a step has no methods. */
+    function methodNames(s) { return s.methods ? Object.keys(s.methods) : null; }
+
+    /* currentMethod: which tool pill is selected on this step.
+       Falls back to the first method if nothing was chosen yet. */
+    function currentMethod(s) {
+      const names = methodNames(s);
+      if (!names) return null;
+      return state.method[s.id] && names.includes(state.method[s.id]) ? state.method[s.id] : names[0];
+    }
+
+    /* visibleActions: the exact actions the user should see right
+       now, after resolving the chosen method and the fork toggle.
+       Each entry comes back as { text, code }: a forked action
+       object collapses to its "older" or "newer" text here, and
+       "code" (a string, or an object forked "older"/"newer")
+       becomes the typeable block shown under the action text. */
+    function visibleActions(s) {
+      const m = currentMethod(s);
+      const list = m ? s.methods[m].actions : s.actions;
+      return list.map(a => {
+        if (typeof a === 'string') return { text: a, code: null };
+        let code = a.code || null;
+        if (code && typeof code !== 'string') code = code[state.hw] || null;
+        return { text: a[state.hw] || a.text, code: code };
+      });
+    }
+
+    /* cheatTables: always hands back an array, whether the data
+       author wrote one table or a list of them. */
+    function cheatTables(s) {
+      if (!s.cheat) return [];
+      return Array.isArray(s.cheat) ? s.cheat : [s.cheat];
+    }
+
+    /* visibleRows: resolves forked table rows the same way
+       visibleActions resolves forked actions, and drops rows
+       that have no variant for the selected side. */
+    function visibleRows(t) {
+      return t.rows
+        .map(r => Array.isArray(r) ? r : (r[state.hw] || null))
+        .filter(Boolean);
+    }
+
+    /* tickKey: the storage key for one checkbox. It includes the
+       method name, so Rufus ticks and Ventoy ticks live apart
+       and switching pills never lies about progress. */
+    function tickKey(s, idx) { return s.id + '|' + (currentMethod(s) || 'base') + '|' + idx; }
+
+    /* stepTicked: true when every visible action is ticked. This
+       single check is what unlocks the Next button. */
+    function stepTicked(s) { return visibleActions(s).every((_, i) => state.ticks[tickKey(s, i)]); }
+
+    /* frontier: the index of the first not-yet-done step. The Big
+       Picture locks everything past it in Hands-on mode. */
+    function frontier() { let i = 0; while (i < steps.length && state.done[steps[i].id]) i++; return i; }
+
+    function doneCount() { return steps.filter(s => state.done[s.id]).length; }
+
+    /* hwLabel: the short tag word for the selected fork side,
+       read from the data (forkTags) so each app names its own
+       fork. Falls back to generic labels if the data omits it. */
+    function hwLabel() {
+      return (PROJECT.forkTags && PROJECT.forkTags[state.hw]) ||
+        (state.hw === 'older' ? 'Older PC' : 'Newer PC');
+    }
+
+    /* issuesFor: splits a step's issues into the All-setups list
+       (always shown, pinned on top) and the local list (shown
+       only when its tag matches the chosen method or fork side). */
+    function issuesFor(s) {
+      if (!s.issues) return { global: [], local: [] };
+      const m = currentMethod(s);
+      const global = s.issues.filter(i => i.tags.includes('All setups'));
+      const local = s.issues.filter(i => !i.tags.includes('All setups') &&
+        i.tags.some(t => t === m || t === hwLabel()));
+      return { global, local };
+    }
+
+    /* ------------------------------------------------------------
+       TINY DOM HELPERS: the only three shortcuts in the file.
+       $ finds one element. el makes one element (tag, css class,
+       inner HTML) so render code stays short. esc makes any data
+       string safe to place in HTML, which is why every piece of
+       data text passes through it before reaching the page.
+    ------------------------------------------------------------ */
+    const $ = sel => document.querySelector(sel);
+    function el(tag, cls, html) { const n = document.createElement(tag); if (cls) n.className = cls; if (html !== undefined) n.innerHTML = html; return n; }
+    function esc(t) { return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+    /* ------------------------------------------------------------
+       CONFIRM MODAL: one reusable yes-or-no dialog.
+       ask() fills the fixed modal skeleton from the body, shows
+       it, and runs onYes only if the warm-colored button is
+       clicked. Reset is currently its only caller.
+    ------------------------------------------------------------ */
+    function ask(title, body, yes, no, onYes) {
+      $('#mTitle').textContent = title;
+      $('#mBody').textContent = body;
+      $('#mYes').textContent = yes;
+      $('#mNo').textContent = no;
+      $('#mwrap').classList.add('show');
+      $('#mYes').onclick = () => { $('#mwrap').classList.remove('show'); onYes(); };
+      $('#mNo').onclick = () => $('#mwrap').classList.remove('show');
+    }
+
+    /* ------------------------------------------------------------
+       RESET: clears step i and everything after it, never
+       anything before it, so rewinding to fix step 3 keeps
+       steps 1 and 2 green. Called by the Reset button on a
+       completed card and by Start over on the finish screen.
+       It always asks first through the confirm modal.
+    ------------------------------------------------------------ */
+    function resetTo(i) {
+      const after = steps.length - i - 1;
+      const title = i === 0 ? 'Start over from step 1?' : 'Reset to step ' + (i + 1) + '?';
+      const body = i === 0
+        ? 'This clears every step and starts the project from zero.'
+        : 'This clears this step and the ' + after + ' after it. No pressure: that is what reset is for.';
+      ask(title, body, i === 0 ? 'Start over' : 'Reset', 'Keep my progress', () => {
+        for (let j = i; j < steps.length; j++) {
+          const s = steps[j];
+          delete state.done[s.id];
+          Object.keys(state.ticks).forEach(k => { if (k.startsWith(s.id + '|')) delete state.ticks[k]; });
+        }
+        state.finished = false;
+        state.cur = i;
+        saveState(); render();
+      });
+    }
+
+    /* ------------------------------------------------------------
+       RENDERERS: each one draws a whole screen or region from
+       state. render() at the bottom decides which of them runs.
+
+       renderHeader: the sticky top bar. Hidden until a mode is
+       chosen, then shows the app name, the mode switch button,
+       the Big Picture button, one LED dot per step (green done,
+       amber ring current), and the progress note under them.
+       Runs on every render so the dots always match state.
+    ------------------------------------------------------------ */
+    function renderHeader() {
+      $('#hdr').hidden = !state.mode;
+      if (!state.mode) return;
+      $('#hproj').textContent = PROJECT.title;
+      $('#modeSwitch').textContent = state.mode === 'handson' ? 'Switch to Just Browsing' : 'Switch to Hands-on';
+      const dots = $('#dots'); dots.innerHTML = '';
+      steps.forEach((s, i) => {
+        const d = el('span', 'dot' + (state.done[s.id] ? ' on' : '') + (i === state.cur && !state.finished ? ' cur' : ''));
+        dots.appendChild(d);
+      });
+      $('#pnote').textContent = state.mode === 'handson'
+        ? doneCount() + ' of ' + steps.length + ' steps complete'
+        : 'Browsing step ' + (state.cur + 1) + ' of ' + steps.length;
+    }
+
+    /* ------------------------------------------------------------
+       CHOOSER: the first screen (state.mode is null). Draws the
+       title, tagline, and the two mode cards. Clicking a card
+       sets state.mode, saves, and re-renders, which is what
+       replaces this screen with the first step card.
+    ------------------------------------------------------------ */
+    function renderChooser() {
+      const m = $('#main'); m.innerHTML = '';
+      const c = el('div', 'choose');
+      c.appendChild(el('div', 'eyebrow', esc(PROJECT.title)));
+      c.appendChild(el('h1', null, 'One Step<br>at a Time'));
+      c.appendChild(el('div', 'proj', esc(PROJECT.tagline)));
+      c.appendChild(el('div', 'tut', 'Actions you tick. Steps you complete.'));
+
+      const modes = el('div', 'modes');
+      const b1 = el('button', 'mode', '<div class="mt">Hands-on</div><div class="ms">I&rsquo;m doing this project.</div>');
+      b1.onclick = () => { state.mode = 'handson'; saveState(); render(); };
+      const b2 = el('button', 'mode', '<div class="mt">Just Browsing</div><div class="ms">Just looking around. Recruiters, start here.</div>');
+      b2.onclick = () => { state.mode = 'browse'; saveState(); render(); };
+      modes.appendChild(b1); modes.appendChild(b2);
+      c.appendChild(modes);
+
+      const demo = el('details', 'demo');
+      demo.innerHTML = '<summary>See it in action</summary><div class="demo-body">' +
+        '<p>Every step is one card. Tick its actions and the next step unlocks.</p>' +
+        '<p>Buttons on a card (tools, cheat sheet, issues I ran into) open extra help only where a step needs it.</p>' +
+        '<p>The Big Picture shows the whole road and how much of it is already green.</p>' +
+        '</div>';
+      c.appendChild(demo);
+
+      c.appendChild(el('div', 'foot', 'A walkthrough built for anyone who loses their place in long guides.'));
+      m.appendChild(c);
+    }
+
+    /* ------------------------------------------------------------
+       STEP CARD: the heart of the app. renderStep draws the
+       current step (state.cur) from top to bottom in the same
+       order every time:
+
+         eyebrow (Step N of M, Complete flag)
+         title and intro
+         What You Need box            (only if the data has prereqs)
+         fork toggle                  (only if any content forks)
+         method pills                 (only if the data has methods)
+         numbered actions             (checkboxes in Hands-on)
+         extras row                   (Cheat sheet / Issues buttons)
+         the open panel, if any
+         checkpoint
+         nav row: Back, Reset, Next
+         gate note                    (Hands-on, until all ticked)
+
+       openPanel remembers which extras panel is unfolded. It is
+       deliberately NOT part of saved state: panels start closed
+       on every visit and close when you move between steps.
+    ------------------------------------------------------------ */
+    let openPanel = null; // 'cheat' | 'issues' | null
+
+    function renderStep() {
+      const m = $('#main'); m.innerHTML = '';
+      const s = steps[state.cur];
+      const hands = state.mode === 'handson';
+      const card = el('section', 'card');
+
+      const eye = el('div', 'step-eyebrow');
+      eye.appendChild(el('span', null, 'Step ' + (state.cur + 1) + ' of ' + steps.length));
+      if (state.done[s.id]) eye.appendChild(el('span', 'done-flag', 'Complete'));
+      card.appendChild(eye);
+
+      card.appendChild(el('h2', null, esc(s.title)));
+      card.appendChild(el('p', 'intro', esc(s.intro)));
+
+      // prerequisites: the What You Need box
+      if (s.prereqs && s.prereqs.length) {
+        const pq = el('div', 'prereq');
+        pq.appendChild(el('h4', null, 'What you need'));
+        const ul = el('ul');
+        s.prereqs.forEach(p => ul.appendChild(el('li', null, esc(p))));
+        pq.appendChild(ul);
+        card.appendChild(pq);
+      }
+
+      // Fork toggle: appears on any step whose content varies by
+      // fork side, detected by an "older" key anywhere in the
+      // step's data (or forced with "hardware": true). The prompt
+      // above the buttons comes from the data (hardwareQuestion).
+      const hasHwContent = s.hardware || JSON.stringify(s).includes('"older"');
+      if (hasHwContent) {
+        const ctrl = el('div', 'ctrl');
+        ctrl.appendChild(el('div', 'ctrl-label', esc(PROJECT.hardwareQuestion || 'This machine is')));
+        const seg = el('div', 'seg');
+        ['older', 'newer'].forEach(h => {
+          const b = el('button', state.hw === h ? 'on' : '', esc(PROJECT.hardwareLabels[h]));
+          b.onclick = () => { state.hw = h; saveState(); render(); };
+          seg.appendChild(b);
+        });
+        ctrl.appendChild(seg);
+        card.appendChild(ctrl);
+      }
+
+      // method pills
+      const names = methodNames(s);
+      if (names) {
+        const ctrl = el('div', 'ctrl');
+        ctrl.appendChild(el('div', 'ctrl-label', esc(s.methodsLabel || 'Pick your method')));
+        const pills = el('div', 'pills');
+        names.forEach(n => {
+          const b = el('button', 'pill' + (currentMethod(s) === n ? ' on' : ''), esc(n));
+          b.onclick = () => { state.method[s.id] = n; saveState(); render(); };
+          pills.appendChild(b);
+        });
+        ctrl.appendChild(pills);
+        card.appendChild(ctrl);
+      }
+
+      // actions, numbered in both modes; each may carry a code block
+      const acts = visibleActions(s);
+      const ul = el('ul', 'actions');
+      acts.forEach((a, i) => {
+        const body = el('span', 'atext', esc(a.text));
+        if (a.code) {
+          const pre = el('pre', 'acode', esc(a.code));
+          // Clicking code selects it for copying; without this,
+          // a click inside the label would toggle the checkbox.
+          pre.onclick = e => e.preventDefault();
+          body.appendChild(pre);
+        }
+        if (hands) {
+          const row = el('label', 'act-row');
+          row.appendChild(el('span', 'anum', String(i + 1)));
+          const inp = document.createElement('input');
+          inp.type = 'checkbox';
+          inp.checked = !!state.ticks[tickKey(s, i)];
+          inp.onchange = () => {
+            if (inp.checked) state.ticks[tickKey(s, i)] = true; else delete state.ticks[tickKey(s, i)];
+            saveState(); render();
+          };
+          row.appendChild(inp);
+          row.appendChild(el('span', 'box'));
+          row.appendChild(body);
+          ul.appendChild(row);
+        } else {
+          const row = el('li', 'act-row');
+          row.appendChild(el('span', 'anum', String(i + 1)));
+          row.appendChild(body);
+          ul.appendChild(row);
+        }
+      });
+      card.appendChild(ul);
+
+      // extras row
+      const iss = issuesFor(s);
+      const issCount = iss.global.length + iss.local.length;
+      const tables = cheatTables(s);
+      if (tables.length || issCount) {
+        const ex = el('div', 'extras');
+        if (tables.length) {
+          const b = el('button', 'xbtn' + (openPanel === 'cheat' ? ' open' : ''), 'Cheat sheet');
+          b.onclick = () => { openPanel = openPanel === 'cheat' ? null : 'cheat'; render(); };
+          ex.appendChild(b);
+        }
+        if (issCount) {
+          const b = el('button', 'xbtn' + (openPanel === 'issues' ? ' open' : ''), 'Issues I ran into (' + issCount + ')');
+          b.onclick = () => { openPanel = openPanel === 'issues' ? null : 'issues'; render(); };
+          ex.appendChild(b);
+        }
+        card.appendChild(ex);
+      }
+
+      if (openPanel === 'cheat' && tables.length) {
+        const p = el('div', 'panel');
+        tables.forEach(t => {
+          const block = el('div', 'tbl');
+          block.appendChild(el('h4', null, esc(t.title)));
+          const wrap = el('div', 'tablewrap');
+          const tb = el('table');
+          const rows = visibleRows(t);
+          tb.innerHTML = '<thead><tr>' + t.cols.map(c => '<th>' + esc(c) + '</th>').join('') + '</tr></thead>' +
+            '<tbody>' + rows.map(r => '<tr>' + r.map((c, ci) =>
+              '<td' + (t.monoLastCol && ci === r.length - 1 ? ' class="mono"' : '') + '>' + esc(c) + '</td>'
+            ).join('') + '</tr>').join('') + '</tbody>';
+          wrap.appendChild(tb); block.appendChild(wrap); p.appendChild(block);
+        });
+        card.appendChild(p);
+      }
+
+      if (openPanel === 'issues' && issCount) {
+        const p = el('div', 'panel');
+        p.appendChild(el('h4', null, 'Issues I ran into'));
+        const renderIssue = it => {
+          const d = el('div', 'issue');
+          const tags = el('div', 'tags');
+          it.tags.forEach(t => tags.appendChild(el('span', 'tag' + (t === 'All setups' ? ' global' : ''), esc(t))));
+          d.appendChild(tags);
+          d.appendChild(el('div', 'prob', esc(it.problem)));
+          d.appendChild(el('div', 'fix', esc(it.fix)));
+          p.appendChild(d);
+        };
+        iss.global.forEach(renderIssue);
+        iss.local.forEach(renderIssue);
+        card.appendChild(p);
+      }
+
+      // checkpoint
+      const met = hands && stepTicked(s);
+      const cp = el('div', 'checkpoint' + (met ? ' met' : ''));
+      cp.appendChild(el('div', 'cp-eyebrow', met ? 'Checkpoint met' : 'Checkpoint'));
+      cp.appendChild(el('div', 'cp-text', 'You&rsquo;re done when: ' + esc(s.done)));
+      card.appendChild(cp);
+
+      // nav: Back left, Reset middle, Next right
+      const nav = el('div', 'nav');
+      const back = el('button', 'ghost', 'Back');
+      back.disabled = state.cur === 0;
+      back.onclick = () => { state.cur--; openPanel = null; saveState(); render(); };
+      nav.appendChild(back);
+
+      if (hands && (state.done[s.id] || stepTicked(s))) {
+        const rs = el('button', 'resetbtn', 'Reset');
+        rs.onclick = () => resetTo(state.cur);
+        nav.appendChild(rs);
+      } else {
+        nav.appendChild(el('span'));
+      }
+
+      const last = state.cur === steps.length - 1;
+      const next = el('button', 'next' + (last ? ' finish' : ''), last ? 'Finish' : 'Next step');
+      if (hands) {
+        next.disabled = !stepTicked(s);
+        next.onclick = () => {
+          state.done[s.id] = true;
+          openPanel = null;
+          if (last) { state.finished = true; } else { state.cur++; }
+          saveState(); render();
+        };
+      } else {
+        next.onclick = () => {
+          openPanel = null;
+          if (last) { state.finished = true; } else { state.cur++; }
+          saveState(); render();
+        };
+      }
+      nav.appendChild(next);
+      card.appendChild(nav);
+
+      if (hands && !stepTicked(s)) {
+        card.appendChild(el('div', 'gate-note', 'Tick every action to unlock the next step.'));
+      }
+
+      m.appendChild(card);
+    }
+
+    /* ------------------------------------------------------------
+       FINISH SCREENS: drawn when state.finished is true.
+       Hands-on gets the all-green congrats (the motto, the
+       step-count line from WORDS, and the congratsAfter line
+       from the data pointing at what comes next). Just Browsing
+       gets the end-of-the-road card offering the mode switch.
+    ------------------------------------------------------------ */
+    function renderEnd() {
+      const m = $('#main'); m.innerHTML = '';
+      const c = el('div', 'congrats');
+      if (state.mode === 'handson') {
+        const n = steps.length;
+        c.appendChild(el('div', 'eyebrow', 'All steps green'));
+        c.appendChild(el('h1', null,
+          '<span>You never did a whole project.</span>' +
+          '<span>You just did one step.</span>' +
+          '<span class="count">' + esc(WORDS[n] || n + ' times') + '.</span>'));
+        c.appendChild(el('p', 'after', esc(PROJECT.congratsAfter || 'On to the next project.')));
+        const row = el('div', 'row');
+        const back = el('button', 'ghost', 'Back');
+        back.onclick = () => { state.finished = false; state.cur = steps.length - 1; saveState(); render(); };
+        const again = el('button', 'resetbtn', 'Start over');
+        again.onclick = () => resetTo(0);
+        const bp = el('button', 'hbtn', 'The Big Picture');
+        bp.onclick = openBP;
+        row.appendChild(back); row.appendChild(again); row.appendChild(bp);
+        c.appendChild(row);
+      } else {
+        c.appendChild(el('div', 'eyebrow', 'End of the road'));
+        c.appendChild(el('h1', null, '<span>That is the whole project,</span><span>seen from above.</span>'));
+        c.appendChild(el('p', 'after', 'Switch to Hands-on when you are ready to walk it for real.'));
+        const row = el('div', 'row');
+        const back = el('button', 'ghost', 'Back');
+        back.onclick = () => { state.finished = false; state.cur = steps.length - 1; saveState(); render(); };
+        const sw = el('button', 'next', 'Switch to Hands-on');
+        sw.onclick = () => { state.mode = 'handson'; state.finished = false; state.cur = frontier(); saveState(); render(); };
+        row.appendChild(back); row.appendChild(sw);
+        c.appendChild(row);
+      }
+      m.appendChild(c);
+    }
+
+    /* ------------------------------------------------------------
+       BIG PICTURE: the overlay listing every step with its LED,
+       opened from the header (and from the finish screen). Rows
+       past the frontier are disabled in Hands-on so nobody jumps
+       ahead; Just Browsing roams free. Clicking an unlocked row
+       jumps state.cur there and closes the overlay.
+    ------------------------------------------------------------ */
+    function openBP() {
+      const list = $('#bpList'); list.innerHTML = '';
+      const hands = state.mode === 'handson';
+      const f = frontier();
+      $('#bpSub').textContent = hands
+        ? doneCount() + ' of ' + steps.length + ' steps complete'
+        : 'Every step, in order. Tap any of them.';
+      steps.forEach((s, i) => {
+        const row = el('button', 'bp-row');
+        const isDone = !!state.done[s.id];
+        const isCur = i === state.cur && !state.finished;
+        row.appendChild(el('span', 'led' + (isDone ? ' on' : isCur ? ' cur' : '')));
+        row.appendChild(el('span', 'bp-num', String(i + 1)));
+        row.appendChild(el('span', 'bp-title', esc(s.title)));
+        row.appendChild(el('span', 'bp-state' + (isDone ? ' done' : ''), isDone ? 'Done' : isCur ? 'Here' : hands && i > f ? 'Locked' : ''));
+        if (hands && i > f) {
+          row.disabled = true;
+          row.title = 'Finish the current step to unlock this one.';
+        } else {
+          row.onclick = () => { state.cur = i; state.finished = false; openPanel = null; saveState(); closeBP(); render(); };
+        }
+        list.appendChild(row);
+      });
+      $('#bp').classList.add('show');
+    }
+    function closeBP() { $('#bp').classList.remove('show'); }
+
+    /* ------------------------------------------------------------
+       ROOT RENDER: the traffic cop. Every click handler in the
+       file ends by calling this. It repaints the header, then
+       picks exactly one screen: no mode yet means the chooser,
+       finished means the congrats screen, otherwise the current
+       step card.
+    ------------------------------------------------------------ */
+    function render() {
+      renderHeader();
+      if (!state.mode) { renderChooser(); return; }
+      if (state.finished) { renderEnd(); return; }
+      renderStep();
+    }
+
+    /* ============================================================
+       HOW TO EXTEND: the recipes for the edits you will actually
+       want to make. Every recipe below was tested on this file.
+
+       Add a step: append one more step object to the "steps"
+       array between the data markers. That is the whole job: the
+       header dots, the Big Picture list, the gating, and the
+       finish count all read steps.length and adjust themselves.
+
+       Add an action to a step: append a string (or a forked
+       object with "text" plus "older"/"newer") to that step's
+       "actions" array. Note for a shipped app: ticks are saved
+       by position, so INSERTING an action in the middle shifts
+       which saved tick belongs to which line. Appending at the
+       end is always safe; if you must insert mid-list, expect
+       returning users to re-tick that step.
+
+       Add a cheat table or an issue: follow the shapes in the
+       PROJECT DATA comment above. New issues need a "tags" array
+       containing "All setups" or one of the forkTags words.
+
+       Add typeable code to an action: turn the action into an
+       object and give it "code" next to "text". The engine shows
+       the code in a dark block under the action, exactly as
+       typed, line breaks included.
+
+       Add a button to every step card: in renderStep(), find the
+       extras row (search for 'extras'). The pattern every button
+       in this file follows:
+           const b = el('button', 'xbtn', 'My button');
+           b.onclick = () => { openPanel = 'mypanel'; render(); };
+           ex.appendChild(b);
+       Then add an `if (openPanel === 'mypanel')` block next to
+       the existing cheat and issues panel blocks to draw its
+       content, and style anything new inside the style block.
+
+       Change looks only: everything visual lives in the style
+       block at the top. Class names in the render code match the
+       selectors there one to one.
+
+       Why your browser-console edits disappear: render() rebuilds
+       the main area from state on every click. Make changes here
+       in the file, not in the live page.
+       ============================================================ */
+
+    /* ------------------------------------------------------------
+       WIRE-UP: the only lines that run at load, in this order.
+       1. The browser tab title takes the project's name from the
+          data, so the engine file needs no per-app edits.
+       2. The four permanent header and overlay buttons get their
+          click handlers (everything inside #main gets handlers
+          during render instead, because it is rebuilt each time).
+       3. loadState() restores saved progress, render() draws the
+          first screen, and from here on the click -> state ->
+          render loop owns the app.
+    ------------------------------------------------------------ */
+    document.title = 'One Step at a Time: ' + PROJECT.title;
+
+    $('#bpBtn').onclick = openBP;
+    $('#bpClose').onclick = closeBP;
+    $('#bp').onclick = e => { if (e.target === $('#bp')) closeBP(); };
+    $('#modeSwitch').onclick = () => {
+      state.mode = state.mode === 'handson' ? 'browse' : 'handson';
+      state.finished = false;
+      if (state.mode === 'handson') state.cur = Math.min(state.cur, frontier());
+      saveState(); render();
+    };
+
+    loadState();
+    render();
+  </script>
+</body>
+
+</html>
