@@ -2033,6 +2033,7 @@
     function loadState() {
       const raw = store.get(NS + 'state');
       if (raw) { try { state = Object.assign(state, JSON.parse(raw)); } catch (e) { } }
+      state.mode = null;
       const p = new URLSearchParams(location.search).get('mode');
       if (p === 'browse' || p === 'handson') state.mode = p;
     }
