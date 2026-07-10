@@ -10,7 +10,8 @@ An eleven-step course teaching a beginner to plan, build, and publish their own 
 
 # Build Your Own Walkthrough App
 
-**[Try it live]([GitHub Pages link])** &middot; [Take the full guide as one file](docs/full-walkthrough.md)
+**[Try it live](https://luigalve.github.io/build-your-own-walkthrough/)** &middot; [Take the full guide as one file](docs/full-walkthrough.md)
+
 
 An eleven-step course that teaches someone with zero coding experience to plan, hand-build, and publish an interactive walkthrough app for their own project. You type real HTML, style it with real CSS, write your project as JSON, and build a working JavaScript render loop with your own hands, then graduate to the full engine and publish on GitHub Pages, free.
 
@@ -30,5 +31,5 @@ The full list lives in the app's Issues panels and in [docs/troubleshooting-and-
 - **docs/** is generated, never hand-edited: [full-walkthrough.md](docs/full-walkthrough.md) is the complete course in one printable file, [troubleshooting-and-lessons.md](docs/troubleshooting-and-lessons.md) is the fixes summary.
 - **tools/** holds the Python scripts that build the docs from the app's data. After any data change: `python3 tools/generate_docs.py` and `python3 tools/generate_full_guide.py` (on Windows, `python` and backslashes).
 
-See the finished result the course points toward: **[One Step at a Time: Install Proxmox on an Old PC]([proxmox Pages link])**.
+See the finished result the course teaches you to build: **[Install Proxmox on an Old PC: One Step at a Time](https://luigalve.github.io/Proxmox-old-pc/)**.
 
