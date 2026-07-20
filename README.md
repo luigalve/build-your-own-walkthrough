@@ -25,7 +25,7 @@ The full list lives in the app's Issues panels and in [docs/troubleshooting-and-
 
 ## How this repo works
 
-- **index.html** is the entire course, engine and content in one file. It shares its engine byte for byte with [the Proxmox walkthrough]([proxmox repo link]); only the data between the two markers differs.
+- **index.html** is the entire course, engine and content in one file. It shares its engine byte for byte with [the Proxmox walkthrough](https://github.com/luigalve/proxmox-old-pc); only the data between the two markers differs.
 - **docs/** is generated, never hand-edited: [full-walkthrough.md](docs/full-walkthrough.md) is the complete course in one printable file, [troubleshooting-and-lessons.md](docs/troubleshooting-and-lessons.md) is the fixes summary.
 - **tools/** holds the Python scripts that build the docs from the app's data. After any data change: `python3 tools/generate_docs.py` and `python3 tools/generate_full_guide.py` (on Windows, `python` and backslashes).
 
